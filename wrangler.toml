@@ -1,0 +1,13 @@
+name = "takezon"
+compatibility_date = "2024-09-23"
+
+# Automatically compile Vite SPA before deployment
+[build]
+command = "npm run build"
+
+# Configure static assets with Single Page Application (SPA) routing
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+html_handling = "single-page-application"
+not_found_handling = "single-page-application"

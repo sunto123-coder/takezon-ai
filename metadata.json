@@ -1,0 +1,6 @@
+{
+  "name": "TakeZon - Premium USA E-Commerce & Product Discovery",
+  "description": "Discover trending smart gadgets, camera gear, PC accessories, kitchen appliances, and fitness gear with exclusive offers and deals on TakeZon.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

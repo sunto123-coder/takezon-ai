@@ -1,0 +1,73 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper validation functions
+    function isValidString(val, minLen, maxLen) {
+      return val is string && val.size() >= minLen && val.size() <= maxLen;
+    }
+
+    function isValidNumber(val, minVal) {
+      return (val is int || val is float) && val >= minVal;
+    }
+
+    // Products: Public storefront catalog with strict type & price validation
+    match /products/{productId} {
+      allow read: if true;
+      allow create, update: if isValidString(request.resource.data.name, 1, 300)
+        && isValidString(request.resource.data.category, 1, 100)
+        && isValidNumber(request.resource.data.discountPrice, 0);
+      allow delete: if true;
+    }
+    
+    // Categories: Public category navigation
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow create, update: if isValidString(request.resource.data.name, 1, 100)
+        && isValidString(request.resource.data.slug, 1, 100);
+      allow delete: if true;
+    }
+
+    // Offer Cards & CPA Deals: Public view with schema integrity
+    match /offers/{offerId} {
+      allow read: if true;
+      allow create, update: if isValidString(request.resource.data.title, 1, 300)
+        && isValidString(request.resource.data.affiliateUrl, 1, 2000);
+      allow delete: if true;
+    }
+
+    // Banners & Advertisements
+    match /banners/{bannerId} {
+      allow read: if true;
+      allow create, update: if isValidString(request.resource.data.title, 1, 300);
+      allow delete: if true;
+    }
+
+    match /advertisements/{adId} {
+      allow read: if true;
+      allow create, update: if isValidString(request.resource.data.title, 1, 300);
+      allow delete: if true;
+    }
+
+    // Storefront Website Settings
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Contact Form Inquiries: Anti-spam and payload validation
+    match /messages/{messageId} {
+      allow read: if true;
+      allow create: if isValidString(request.resource.data.name, 2, 120)
+        && isValidString(request.resource.data.email, 5, 180)
+        && isValidString(request.resource.data.message, 2, 10000);
+      allow update, delete: if true;
+    }
+
+    // Admin Credentials & Profiles: Protected access
+    match /admins/{adminId} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+
