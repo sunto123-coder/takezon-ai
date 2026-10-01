@@ -24,7 +24,15 @@ export const AdminLogin: React.FC = () => {
       await signInWithGoogle();
       addToast('TakeZon এডমিন ড্যাশবোর্ডে স্বাগতম!', 'success');
     } catch (err: any) {
-      setLocalError(err.message || 'গুগল সাইন-ইন সম্পন্ন হতে পারেনি।');
+      if (err.message === 'এই Google account অনুমোদিত নয়।' || err.message?.includes('অনুমোদিত নয়')) {
+        setLocalError('এই Google account অনুমোদিত নয়।');
+      } else if (err.code === 'permission-denied' || err.message?.includes('permission-denied')) {
+        setLocalError('এই Google account অনুমোদিত নয়।');
+      } else if (err.message && (/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(err.message) || /auth\//.test(err.message))) {
+        setLocalError('এই Google account অনুমোদিত নয়।');
+      } else {
+        setLocalError(err.message || 'গুগল সাইন-ইন সম্পন্ন হতে পারেনি।');
+      }
     } finally {
       setIsSigningIn(false);
     }

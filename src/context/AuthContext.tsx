@@ -116,12 +116,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(result.user);
       setIsAdmin(true);
     } catch (err: any) {
-      if (err.code === 'auth/popup-closed-by-user') {
+      if (err.message === 'এই Google account অনুমোদিত নয়।' || err.message?.includes('অনুমোদিত নয়')) {
+        setError('এই Google account অনুমোদিত নয়।');
+      } else if (err.code === 'permission-denied' || err.message?.includes('permission-denied') || err.message?.includes('permission denied')) {
+        setError('এই Google account অনুমোদিত নয়।');
+      } else if (err.code === 'auth/popup-closed-by-user') {
         setError('গুগল লগইন পপআপ উইন্ডো বন্ধ করা হয়েছে। পুনরায় চেষ্টা করুন।');
       } else if (err.code === 'auth/cancelled-popup-request') {
         // Ignored duplicate
       } else {
-        setError(err.message || 'গুগল সাইন-ইন সম্পন্ন করা যায়নি।');
+        const rawMsg = err.message || '';
+        // If the error message contains any email pattern or Firebase auth code, mask it securely
+        if (/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(rawMsg) || /auth\//.test(rawMsg)) {
+          setError('এই Google account অনুমোদিত নয়।');
+        } else {
+          setError(rawMsg || 'গুগল সাইন-ইন সম্পন্ন করা যায়নি।');
+        }
       }
       throw err;
     } finally {
