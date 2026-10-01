@@ -2,7 +2,33 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Helper validation functions
+    // ================= SECURITY & AUTH HELPERS =================
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    // Master Admin authorization: strictly bound to the verified owner Google Account
+    function isMasterAdmin() {
+      return isEmailVerified() && request.auth.token.email == 'bappibiswas1200@gmail.com';
+    }
+
+    // Role-based access control via /admins/{uid} collection
+    function isRegisteredAdmin() {
+      return isEmailVerified() && 
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Global Admin Authorization check (Enforced in database layer)
+    function isAdmin() {
+      return isMasterAdmin() || isRegisteredAdmin();
+    }
+
+    // Volumetric and type validation helpers
     function isValidString(val, minLen, maxLen) {
       return val is string && val.size() >= minLen && val.size() <= maxLen;
     }
@@ -11,63 +37,77 @@ service cloud.firestore {
       return (val is int || val is float) && val >= minVal;
     }
 
-    // Products: Public storefront catalog with strict type & price validation
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // System connectivity test
+    match /test/connection {
+      allow read: if true;
+    }
+
+    // 1. Products: Public storefront read, Admin-only write & delete
     match /products/{productId} {
       allow read: if true;
-      allow create, update: if isValidString(request.resource.data.name, 1, 300)
+      allow create, update: if isAdmin() 
+        && isValidString(request.resource.data.name, 1, 300)
         && isValidString(request.resource.data.category, 1, 100)
         && isValidNumber(request.resource.data.discountPrice, 0);
-      allow delete: if true;
+      allow delete: if isAdmin();
     }
     
-    // Categories: Public category navigation
+    // 2. Categories: Public storefront read, Admin-only write & delete
     match /categories/{categoryId} {
       allow read: if true;
-      allow create, update: if isValidString(request.resource.data.name, 1, 100)
+      allow create, update: if isAdmin()
+        && isValidString(request.resource.data.name, 1, 100)
         && isValidString(request.resource.data.slug, 1, 100);
-      allow delete: if true;
+      allow delete: if isAdmin();
     }
 
-    // Offer Cards & CPA Deals: Public view with schema integrity
+    // 3. Offers & Deals: Public storefront read, Admin-only write & delete
     match /offers/{offerId} {
       allow read: if true;
-      allow create, update: if isValidString(request.resource.data.title, 1, 300)
+      allow create, update: if isAdmin()
+        && isValidString(request.resource.data.title, 1, 300)
         && isValidString(request.resource.data.affiliateUrl, 1, 2000);
-      allow delete: if true;
+      allow delete: if isAdmin();
     }
 
-    // Banners & Advertisements
+    // 4. Banners & Advertisements: Public read, Admin-only write & delete
     match /banners/{bannerId} {
       allow read: if true;
-      allow create, update: if isValidString(request.resource.data.title, 1, 300);
-      allow delete: if true;
+      allow create, update: if isAdmin() && isValidString(request.resource.data.title, 1, 300);
+      allow delete: if isAdmin();
     }
 
     match /advertisements/{adId} {
       allow read: if true;
-      allow create, update: if isValidString(request.resource.data.title, 1, 300);
-      allow delete: if true;
+      allow create, update: if isAdmin() && isValidString(request.resource.data.title, 1, 300);
+      allow delete: if isAdmin();
     }
 
-    // Storefront Website Settings
+    // 5. Website Settings: Public read, Admin-only write
     match /settings/{settingId} {
       allow read: if true;
-      allow write: if true;
+      allow write: if isAdmin();
     }
 
-    // Contact Form Inquiries: Anti-spam and payload validation
+    // 6. Customer Contact Inquiries (Messages): Public submit only (anti-spam), Admin-only read/update/delete
     match /messages/{messageId} {
-      allow read: if true;
       allow create: if isValidString(request.resource.data.name, 2, 120)
         && isValidString(request.resource.data.email, 5, 180)
         && isValidString(request.resource.data.message, 2, 10000);
-      allow update, delete: if true;
+      allow read, update, delete: if isAdmin();
     }
 
-    // Admin Credentials & Profiles: Protected access
+    // 7. Admin Authorization Records: Strict Zero-Trust isolation
     match /admins/{adminId} {
-      allow read, write: if request.auth != null;
+      // User can only inspect their own admin document, or Master Admin can inspect all
+      allow read: if isSignedIn() && (request.auth.uid == adminId || isMasterAdmin());
+      // Only Master Admin can grant or write admin privileges in the database
+      allow write: if isMasterAdmin();
     }
   }
 }
-

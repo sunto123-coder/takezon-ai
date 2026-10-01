@@ -1,0 +1,116 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "USA product catalog item",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "discountPrice": { "type": "number" },
+        "originalPrice": { "type": "number" },
+        "image": { "type": "string" },
+        "rating": { "type": "number" },
+        "reviewsCount": { "type": "number" },
+        "affiliateUrl": { "type": "string" }
+      },
+      "required": ["name", "category", "discountPrice"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Product category",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "slug": { "type": "string" },
+        "icon": { "type": "string" },
+        "order": { "type": "number" }
+      },
+      "required": ["name", "slug"]
+    },
+    "Offer": {
+      "title": "Offer",
+      "description": "CPA offer or discount deal",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "affiliateUrl": { "type": "string" },
+        "badge": { "type": "string" }
+      },
+      "required": ["title", "affiliateUrl"]
+    },
+    "Advertisement": {
+      "title": "Advertisement",
+      "description": "Banner or ad script",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "type": { "type": "string" }
+      },
+      "required": ["title"]
+    },
+    "Setting": {
+      "title": "Setting",
+      "description": "Store configuration and header notices",
+      "type": "object",
+      "properties": {
+        "storeName": { "type": "string" }
+      }
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Public customer inquiry message",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "message": { "type": "string" }
+      },
+      "required": ["name", "email", "message"]
+    },
+    "Admin": {
+      "title": "Admin",
+      "description": "Authorized administrator record",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "role": { "type": "string" }
+      },
+      "required": ["email", "role"]
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Storefront product items"
+    },
+    "/categories/{categoryId}": {
+      "schema": "Category",
+      "description": "Storefront categories"
+    },
+    "/offers/{offerId}": {
+      "schema": "Offer",
+      "description": "Storefront deal offer cards"
+    },
+    "/advertisements/{adId}": {
+      "schema": "Advertisement",
+      "description": "Storefront banners and ads"
+    },
+    "/banners/{bannerId}": {
+      "schema": "Advertisement",
+      "description": "Storefront banners"
+    },
+    "/settings/{settingId}": {
+      "schema": "Setting",
+      "description": "Website global configuration"
+    },
+    "/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Contact form submissions"
+    },
+    "/admins/{adminId}": {
+      "schema": "Admin",
+      "description": "Authorized admin users"
+    }
+  }
+}

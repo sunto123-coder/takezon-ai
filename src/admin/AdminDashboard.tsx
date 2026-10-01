@@ -706,12 +706,20 @@ export const AdminDashboard: React.FC = () => {
 
           <div className="flex items-center justify-between pt-2">
             <div className="flex items-center gap-2 overflow-hidden">
-              <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold text-white shrink-0">
-                A
-              </div>
+              {user?.photoURL ? (
+                <img
+                  src={user.photoURL}
+                  alt={user.displayName || 'Admin'}
+                  className="w-7 h-7 rounded-full object-cover shrink-0 ring-1 ring-amber-400"
+                />
+              ) : (
+                <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold text-white shrink-0">
+                  {user?.displayName ? user.displayName.charAt(0).toUpperCase() : (user?.email ? user.email.charAt(0).toUpperCase() : 'A')}
+                </div>
+              )}
               <div className="truncate">
                 <div className="text-xs font-bold text-white truncate">
-                  {user?.email || 'Admin Session'}
+                  {user?.displayName || user?.email || 'Admin Session'}
                 </div>
                 <div className="text-[10px] text-emerald-400 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>

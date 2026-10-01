@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '../firebase';
 import { 
   Category, 
   Product, 
@@ -155,9 +157,22 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setAdvertisements(data.filter((a) => !deleted.has(a.id)));
     });
     const unsubSettings = listenToSettings((data) => setSettings(data));
-    const unsubMessages = listenToMessages((data) => {
-      const deleted = getDeletedIds('messages');
-      setMessages(data.filter((m) => !deleted.has(m.id)));
+    
+    // Only subscribe to customer messages for authenticated admin to adhere to Firestore Security Rules
+    let unsubMessages: (() => void) | null = null;
+    const unsubAuth = onAuthStateChanged(auth, (currentUser) => {
+      if (unsubMessages) {
+        unsubMessages();
+        unsubMessages = null;
+      }
+      if (currentUser) {
+        unsubMessages = listenToMessages((data) => {
+          const deleted = getDeletedIds('messages');
+          setMessages(data.filter((m) => !deleted.has(m.id)));
+        });
+      } else {
+        setMessages([]);
+      }
     });
 
     setLoading(false);
@@ -168,7 +183,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       unsubOffers();
       unsubAds();
       unsubSettings();
-      unsubMessages();
+      if (unsubMessages) unsubMessages();
+      unsubAuth();
     };
   }, []);
 
