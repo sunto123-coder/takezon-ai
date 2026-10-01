@@ -29,29 +29,48 @@ const AuthContext = createContext<AuthContextType>({
 
 /**
  * Validates whether the signed-in Firebase user has administrator rights.
- * Enforces database-level authorization check strictly governed by Firestore Security Rules.
+ * Verifies the user's UID against the admins/{uid} document in the active Firestore database.
  */
 export const verifyIsAdmin = async (firebaseUser: User | null): Promise<boolean> => {
-  if (!firebaseUser) return false;
+  if (!firebaseUser || !firebaseUser.uid) return false;
 
-  // 1. Check if user already has an active verified admin document in Firestore
+  const uid = firebaseUser.uid.trim();
+
+  // 1. Direct verified check against admins/{uid}
   try {
-    const adminDoc = await getDoc(doc(db, 'admins', firebaseUser.uid));
-    if (adminDoc.exists() && adminDoc.data()?.role === 'admin') {
-      return true;
+    const adminDocRef = doc(db, 'admins', uid);
+    const adminDocSnap = await getDoc(adminDocRef);
+
+    if (adminDocSnap.exists()) {
+      const data = adminDocSnap.data();
+      const role = String(data?.role || '').toLowerCase().trim();
+      if (role === 'admin' || data?.isAdmin === true) {
+        return true;
+      }
     }
   } catch (err) {
-    console.warn('Note on checking admin document in Firestore:', err);
+    console.warn('First attempt checking admin document in Firestore:', err);
+    // Transient network/token retry
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      const adminDocRef = doc(db, 'admins', uid);
+      const adminDocSnap = await getDoc(adminDocRef);
+      if (adminDocSnap.exists()) {
+        const data = adminDocSnap.data();
+        const role = String(data?.role || '').toLowerCase().trim();
+        if (role === 'admin' || data?.isAdmin === true) {
+          return true;
+        }
+      }
+    } catch (retryErr) {
+      console.warn('Retry checking admin document in Firestore failed:', retryErr);
+    }
   }
 
-  // 2. Attempt to synchronize/assert admin profile in Firestore.
-  // In firestore.rules, "allow write: if isMasterAdmin();" guarantees that
-  // Firestore itself evaluates whether request.auth.token.email is the Master Admin.
-  // If authorized by Firestore Rules, the write succeeds!
-  // If unauthorized, Firestore Rules reject the write with permission-denied.
+  // 2. Secondary synchronization check for Master Admin governed by Firestore rules
   try {
-    await setDoc(doc(db, 'admins', firebaseUser.uid), {
-      uid: firebaseUser.uid,
+    await setDoc(doc(db, 'admins', uid), {
+      uid: uid,
       email: firebaseUser.email,
       displayName: firebaseUser.displayName || 'TakeZon Admin',
       photoURL: firebaseUser.photoURL || null,
@@ -61,7 +80,7 @@ export const verifyIsAdmin = async (firebaseUser: User | null): Promise<boolean>
 
     return true;
   } catch {
-    // Firestore rules rejected the write -> Unauthorized user
+    // Both direct lookup and Firestore rule assertion rejected -> Unauthorized
     return false;
   }
 };
@@ -115,6 +134,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setUser(result.user);
       setIsAdmin(true);
+      setError(null);
     } catch (err: any) {
       if (err.message === 'এই Google account অনুমোদিত নয়।' || err.message?.includes('অনুমোদিত নয়')) {
         setError('এই Google account অনুমোদিত নয়।');
@@ -123,10 +143,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else if (err.code === 'auth/popup-closed-by-user') {
         setError('গুগল লগইন পপআপ উইন্ডো বন্ধ করা হয়েছে। পুনরায় চেষ্টা করুন।');
       } else if (err.code === 'auth/cancelled-popup-request') {
-        // Ignored duplicate
+        // Ignored duplicate popup request
       } else {
         const rawMsg = err.message || '';
-        // If the error message contains any email pattern or Firebase auth code, mask it securely
+        // Sanitize error messages so credentials or internal tokens are never shown
         if (/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(rawMsg) || /auth\//.test(rawMsg)) {
           setError('এই Google account অনুমোদিত নয়।');
         } else {
