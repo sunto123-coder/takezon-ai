@@ -41,7 +41,7 @@ export const ToastContainer: React.FC = () => {
               onClick={() => removeToast(toast.id)}
               className="text-slate-400 hover:text-white hover:bg-white/10 active:bg-white/20 p-1.5 rounded-lg transition-all duration-150 cursor-pointer active:scale-90"
               aria-label="Close notification"
-              title="Dismiss (বন্ধ করুন)"
+              title="Dismiss"
             >
               <X className="w-4 h-4 stroke-[2.5]" />
             </button>

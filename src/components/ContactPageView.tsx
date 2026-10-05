@@ -69,10 +69,10 @@ export const ContactPageView: React.FC = () => {
           type="button"
           onClick={goBack}
           className="group inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 hover:text-slate-950 text-xs font-bold border border-slate-200 shadow-xs hover:shadow-md transition-all duration-200 active:scale-95 cursor-pointer"
-          title="Return to previous view (ফিরে যান)"
+          title="Return to previous view"
         >
           <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1 text-indigo-600" />
-          <span>Back to Store (ফিরে যান)</span>
+          <span>Back to Store</span>
         </button>
 
         <button

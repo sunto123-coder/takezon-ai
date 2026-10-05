@@ -14,9 +14,13 @@ import {
   Heart,
   Tag,
   ArrowRight,
-  ArrowLeft
+  ArrowLeft,
+  ShoppingCart,
+  Play,
+  Eye
 } from 'lucide-react';
 import { ProductCard } from './ProductCard';
+import { BannerCarousel } from './BannerCarousel';
 
 export const ProductDetailsModal: React.FC = () => {
   const { 
@@ -57,9 +61,28 @@ export const ProductDetailsModal: React.FC = () => {
     .filter(p => p.id !== product.id && p.category === product.category)
     .slice(0, 4);
 
-  const handleCta = () => {
-    const url = product.affiliateUrl || product.productUrl;
-    handleAffiliateClick(url, product.name);
+  const amazonUrl = (product.amazonUrl && product.amazonUrl.trim().length > 0)
+    ? product.amazonUrl
+    : (product.affiliateUrl || product.productUrl || `https://www.amazon.com/s?k=${encodeURIComponent(product.name)}&tag=takezon-20`);
+
+  const walmartUrl = (product.walmartUrl && product.walmartUrl.trim().length > 0)
+    ? product.walmartUrl
+    : `https://www.walmart.com/search?q=${encodeURIComponent(product.name)}`;
+
+  const videoUrl = (product.videoUrl && product.videoUrl.trim().length > 0)
+    ? product.videoUrl
+    : `https://www.youtube.com/results?search_query=${encodeURIComponent(product.name + ' review')}`;
+
+  const handleAmazonClick = () => {
+    handleAffiliateClick(amazonUrl, `${product.name} (Amazon)`);
+  };
+
+  const handleWalmartClick = () => {
+    handleAffiliateClick(walmartUrl, `${product.name} (Walmart)`);
+  };
+
+  const handleVideoClick = () => {
+    window.open(videoUrl, '_blank', 'noopener,noreferrer');
   };
 
   const handleShare = () => {
@@ -77,6 +100,21 @@ export const ProductDetailsModal: React.FC = () => {
 
   const hasSavings = product.originalPrice > product.discountPrice;
   const savings = hasSavings ? (product.originalPrice - product.discountPrice).toFixed(2) : 0;
+
+  // Visibility checks
+  const showImage = product.showImage !== false;
+  const showTitle = product.showTitle !== false;
+  const showDescription = product.showDescription !== false;
+  const isCheckDetailsMode = product.displayMode === 'checkDetails';
+  const showAmount = product.showAmount !== false && !isCheckDetailsMode;
+  const showCheckDetails = product.showCheckDetails === true || isCheckDetailsMode;
+
+  // Action links checks: reflect the toggle switches directly so all enabled buttons are visible!
+  const canShowAmazon = product.showAmazonButton !== false;
+  const canShowWalmart = product.showWalmartButton !== false;
+  const canShowVideo = product.showVideoButton !== false;
+
+  const activeButtonsCount = (canShowAmazon ? 1 : 0) + (canShowWalmart ? 1 : 0) + (canShowVideo ? 1 : 0);
 
   return (
     <div 
@@ -99,10 +137,10 @@ export const ProductDetailsModal: React.FC = () => {
               type="button"
               onClick={closeProductModal}
               className="group inline-flex items-center gap-1.5 h-10 px-3 sm:px-3.5 rounded-xl bg-slate-100 hover:bg-indigo-50 active:bg-indigo-100 text-slate-700 hover:text-indigo-600 font-bold text-xs transition-all duration-200 active:scale-95 cursor-pointer border border-slate-200/90 hover:border-indigo-300 shadow-xs"
-              title="Go back (ফিরে যান / ESC)"
+              title="Back to Products (ESC)"
             >
               <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1 text-indigo-600" />
-              <span>Back (ফিরে যান)</span>
+              <span>Back to Products</span>
             </button>
 
             {/* Breadcrumb path */}
@@ -141,11 +179,11 @@ export const ProductDetailsModal: React.FC = () => {
               type="button"
               onClick={closeProductModal}
               className="group inline-flex items-center gap-1.5 h-10 px-3.5 rounded-xl bg-rose-50 hover:bg-rose-100 active:bg-rose-200 text-rose-700 hover:text-rose-800 border border-rose-200 hover:border-rose-300 transition-all duration-200 active:scale-90 cursor-pointer shadow-xs font-bold text-xs"
-              title="Close window (বন্ধ করুন / ESC)"
+              title="Close (ESC)"
               aria-label="Close"
             >
               <X className="w-4 h-4 stroke-[2.5] transition-transform group-hover:rotate-90 duration-200" />
-              <span>Close (বন্ধ)</span>
+              <span>Close</span>
             </button>
           </div>
         </div>
@@ -155,61 +193,63 @@ export const ProductDetailsModal: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             
             {/* Left: Product Images Gallery */}
-            <div className="lg:col-span-6 space-y-4">
-              <div className="relative pt-[80%] rounded-2xl overflow-hidden bg-slate-100 border border-slate-200">
-                <img
-                  src={images[activeImageIndex] || images[0]}
-                  alt={product.name}
-                  className="absolute inset-0 w-full h-full object-cover transition-all duration-300"
-                />
-                {product.discountPercentage > 0 && (
-                  <div className="absolute top-4 left-4 bg-red-600 text-white font-black text-xs px-3 py-1.5 rounded-lg shadow-md">
-                    SAVE {product.discountPercentage}%
+            {showImage && (
+              <div className="lg:col-span-6 space-y-4">
+                <div className="relative pt-[80%] rounded-2xl overflow-hidden bg-slate-100 border border-slate-200">
+                  <img
+                    src={images[activeImageIndex] || images[0]}
+                    alt={product.name}
+                    className="absolute inset-0 w-full h-full object-cover transition-all duration-300"
+                  />
+                  {showAmount && product.discountPercentage > 0 && (
+                    <div className="absolute top-4 left-4 bg-red-600 text-white font-black text-xs px-3 py-1.5 rounded-lg shadow-md">
+                      SAVE {product.discountPercentage}%
+                    </div>
+                  )}
+                </div>
+
+                {/* Thumbnails */}
+                {images.length > 1 && (
+                  <div className="flex items-center gap-3 overflow-x-auto pb-1">
+                    {images.map((img, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setActiveImageIndex(idx)}
+                        className={`relative w-16 h-16 sm:w-18 sm:h-18 rounded-xl overflow-hidden border-2 shrink-0 transition-all cursor-pointer ${
+                          activeImageIndex === idx 
+                            ? 'border-indigo-600 ring-2 ring-indigo-200 scale-102' 
+                            : 'border-slate-200 opacity-70 hover:opacity-100'
+                        }`}
+                      >
+                        <img src={img} alt="" className="w-full h-full object-cover" />
+                      </button>
+                    ))}
                   </div>
                 )}
-              </div>
 
-              {/* Thumbnails */}
-              {images.length > 1 && (
-                <div className="flex items-center gap-3 overflow-x-auto pb-1">
-                  {images.map((img, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setActiveImageIndex(idx)}
-                      className={`relative w-16 h-16 sm:w-18 sm:h-18 rounded-xl overflow-hidden border-2 shrink-0 transition-all cursor-pointer ${
-                        activeImageIndex === idx 
-                          ? 'border-indigo-600 ring-2 ring-indigo-200 scale-102' 
-                          : 'border-slate-200 opacity-70 hover:opacity-100'
-                      }`}
-                    >
-                      <img src={img} alt="" className="w-full h-full object-cover" />
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {/* USA Guarantee Badges */}
-              <div className="grid grid-cols-3 gap-3 pt-2 text-center text-xs text-slate-600">
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                  <Truck className="w-4 h-4 mx-auto text-indigo-600 mb-1" />
-                  <span className="font-semibold block text-slate-900">USA Verified</span>
-                  <span className="text-[10px] text-slate-500">Fast Shipping</span>
-                </div>
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                  <ShieldCheck className="w-4 h-4 mx-auto text-emerald-600 mb-1" />
-                  <span className="font-semibold block text-slate-900">Authentic</span>
-                  <span className="text-[10px] text-slate-500">Direct From Partner</span>
-                </div>
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                  <RotateCcw className="w-4 h-4 mx-auto text-amber-600 mb-1" />
-                  <span className="font-semibold block text-slate-900">Warranty</span>
-                  <span className="text-[10px] text-slate-500">Full Coverage</span>
+                {/* USA Guarantee Badges */}
+                <div className="grid grid-cols-3 gap-3 pt-2 text-center text-xs text-slate-600">
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <Truck className="w-4 h-4 mx-auto text-indigo-600 mb-1" />
+                    <span className="font-semibold block text-slate-900">USA Verified</span>
+                    <span className="text-[10px] text-slate-500">Fast Shipping</span>
+                  </div>
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <ShieldCheck className="w-4 h-4 mx-auto text-emerald-600 mb-1" />
+                    <span className="font-semibold block text-slate-900">Authentic</span>
+                    <span className="text-[10px] text-slate-500">Direct From Partner</span>
+                  </div>
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <RotateCcw className="w-4 h-4 mx-auto text-amber-600 mb-1" />
+                    <span className="font-semibold block text-slate-900">Warranty</span>
+                    <span className="text-[10px] text-slate-500">Full Coverage</span>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Right: Information, Pricing, CTA */}
-            <div className="lg:col-span-6 space-y-6">
+            <div className={`${showImage ? 'lg:col-span-6' : 'lg:col-span-12'} space-y-6`}>
               <div>
                 <div className="flex items-center justify-between text-xs mb-2">
                   <span className="font-extrabold text-indigo-600 uppercase tracking-widest">
@@ -221,9 +261,11 @@ export const ProductDetailsModal: React.FC = () => {
                   </span>
                 </div>
 
-                <h1 className="font-heading font-black text-2xl sm:text-3xl text-slate-950 leading-tight">
-                  {product.name}
-                </h1>
+                {showTitle && (
+                  <h1 className="font-heading font-black text-2xl sm:text-3xl text-slate-950 leading-tight">
+                    {product.name}
+                  </h1>
+                )}
 
                 {/* Rating */}
                 <div className="flex items-center gap-2 mt-3">
@@ -237,38 +279,101 @@ export const ProductDetailsModal: React.FC = () => {
                 </div>
               </div>
 
-              {/* Pricing box */}
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200">
-                <div className="flex items-baseline gap-3">
-                  <span className="text-3xl sm:text-4xl font-heading font-black text-slate-950">
-                    ${product.discountPrice.toFixed(2)}
-                  </span>
-                  {hasSavings && (
-                    <span className="text-base text-slate-400 line-through">
-                      ${product.originalPrice.toFixed(2)}
-                    </span>
+              {/* Pricing & Presentation box */}
+              {(showAmount || showCheckDetails || product.customDisplayText) && (
+                <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                  {showAmount && (
+                    <div className="flex items-baseline gap-3">
+                      <span className="text-3xl sm:text-4xl font-heading font-black text-slate-950">
+                        {product.amountText || `$${product.discountPrice.toFixed(2)}`}
+                      </span>
+                      {!product.amountText && hasSavings && (
+                        <span className="text-base text-slate-400 line-through">
+                          ${product.originalPrice.toFixed(2)}
+                        </span>
+                      )}
+                      {!product.amountText && hasSavings && (
+                        <span className="px-2.5 py-1 rounded-md text-xs font-black bg-emerald-600 text-white">
+                          Save ${savings} ({product.discountPercentage}%)
+                        </span>
+                      )}
+                    </div>
                   )}
-                  {hasSavings && (
-                    <span className="px-2.5 py-1 rounded-md text-xs font-black bg-emerald-600 text-white">
-                      Save ${savings} ({product.discountPercentage}%)
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-slate-500 mt-2">
-                  Price verified across authorized US dealers. Deal subject to stock and retailer terms.
-                </p>
-              </div>
 
-              {/* Action buttons (Primary CTA + Soft Close Button) */}
+                  {showCheckDetails && (
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-bold">
+                      <Eye className="w-4 h-4" />
+                      <span>{product.checkDetailsText || 'Check Details'}</span>
+                    </div>
+                  )}
+
+                  {product.customDisplayText && (
+                    <div className="text-xs font-semibold text-slate-600">
+                      {product.customDisplayText}
+                    </div>
+                  )}
+
+                  <p className="text-xs text-slate-500 mt-2">
+                    Price verified across authorized US dealers. Deal subject to stock and retailer terms.
+                  </p>
+                </div>
+              )}
+
+              {/* Action buttons (Amazon, Walmart, Video View) */}
               <div className="space-y-3">
-                <button
-                  type="button"
-                  onClick={handleCta}
-                  className="w-full py-4 px-6 rounded-2xl bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-slate-950 font-black text-base shadow-xl shadow-amber-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer transform hover:scale-[1.01] active:scale-98"
-                >
-                  <span>{product.ctaText || 'View Deal at Verified Seller'}</span>
-                  <ExternalLink className="w-5 h-5" />
-                </button>
+                {activeButtonsCount > 0 && (
+                  <div className={`grid gap-2.5 ${
+                    activeButtonsCount === 1 
+                      ? 'grid-cols-1' 
+                      : activeButtonsCount === 2 
+                        ? 'grid-cols-1 sm:grid-cols-2' 
+                        : 'grid-cols-1 sm:grid-cols-3'
+                  }`}>
+                    {/* Check Amazon */}
+                    {canShowAmazon && (
+                      <button
+                        type="button"
+                        onClick={handleAmazonClick}
+                        className="w-full py-3.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-slate-950 font-black text-sm shadow-md hover:shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer transform hover:scale-[1.01] active:scale-98"
+                      >
+                        <ShoppingCart className="w-4 h-4" />
+                        <span>{product.amazonButtonText || 'Check Amazon'}</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+
+                    {/* Check Walmart */}
+                    {canShowWalmart && (
+                      <button
+                        type="button"
+                        onClick={handleWalmartClick}
+                        className="w-full py-3.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-black text-sm shadow-md hover:shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer transform hover:scale-[1.01] active:scale-98"
+                      >
+                        <Sparkles className="w-4 h-4 text-amber-300" />
+                        <span>{product.walmartButtonText || 'Check Walmart'}</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+
+                    {/* Video View */}
+                    {canShowVideo && (
+                      <button
+                        type="button"
+                        onClick={handleVideoClick}
+                        className="w-full py-3.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white font-black text-sm shadow-md hover:shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer transform hover:scale-[1.01] active:scale-98"
+                      >
+                        <Play className="w-4 h-4 fill-current" />
+                        <span>{product.videoButtonText || 'Video View'}</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Product View Details Sponsored Ad Placement (Admin Configurable: Image or Custom Code) */}
+                <div className="pt-2">
+                  <BannerCarousel placement="product_details" className="border-amber-400/40 shadow-sm" />
+                </div>
 
                 <div className="pt-1">
                   <button
@@ -277,7 +382,7 @@ export const ProductDetailsModal: React.FC = () => {
                     className="w-full py-3.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 hover:text-slate-950 font-bold text-xs transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer border border-slate-200/90 active:scale-98 shadow-xs"
                   >
                     <ArrowLeft className="w-4 h-4 text-indigo-600" />
-                    <span>Return to Browsing (পেজে ফিরে যান)</span>
+                    <span>Return to Browsing</span>
                   </button>
                 </div>
 
@@ -287,14 +392,16 @@ export const ProductDetailsModal: React.FC = () => {
               </div>
 
               {/* Description */}
-              <div>
-                <h3 className="font-bold text-slate-900 text-sm uppercase tracking-wider mb-2">
-                  Product Overview
-                </h3>
-                <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
-                  {product.fullDescription || product.shortDescription}
-                </p>
-              </div>
+              {showDescription && (product.fullDescription || product.shortDescription) && (
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm uppercase tracking-wider mb-2">
+                    Product Overview
+                  </h3>
+                  <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
+                    {product.fullDescription || product.shortDescription}
+                  </p>
+                </div>
+              )}
 
               {/* Key Features checklist */}
               {product.features && product.features.length > 0 && (

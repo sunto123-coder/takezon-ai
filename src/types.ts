@@ -42,6 +42,32 @@ export interface Product {
   features?: string[];
   createdAt: number;
   updatedAt: number;
+
+  // ================= 4. PRODUCT DISPLAY CONTROL =================
+  displayMode?: 'amount' | 'checkDetails';
+  amountText?: string;
+  checkDetailsText?: string;
+  customDisplayText?: string;
+
+  // ================= 5. THREE PRODUCT ACTION LINKS =================
+  amazonUrl?: string;
+  walmartUrl?: string;
+  videoUrl?: string;
+
+  // ================= 8. PRODUCT BUTTON TEXT CONTROL =================
+  amazonButtonText?: string;
+  walmartButtonText?: string;
+  videoButtonText?: string;
+
+  // ================= 7. PRODUCT-LEVEL VISIBILITY CONTROLS =================
+  showImage?: boolean;
+  showTitle?: boolean;
+  showDescription?: boolean;
+  showAmount?: boolean;
+  showCheckDetails?: boolean;
+  showAmazonButton?: boolean;
+  showWalmartButton?: boolean;
+  showVideoButton?: boolean;
 }
 
 export interface OfferCard {
@@ -68,7 +94,8 @@ export type AdPlacement =
   | 'between_sections' 
   | 'bottom_listings' 
   | 'sidebar' 
-  | 'footer';
+  | 'footer'
+  | 'product_details';
 
 export interface Advertisement {
   id: string;
@@ -101,6 +128,62 @@ export interface ContactMessage {
   read: boolean;
 }
 
+// ================= 1. SOCIAL MEDIA LINK MANAGEMENT =================
+export type SocialPlatformType = 
+  | 'facebook' 
+  | 'instagram' 
+  | 'youtube' 
+  | 'tiktok' 
+  | 'x' 
+  | 'linkedin' 
+  | 'pinterest' 
+  | 'telegram' 
+  | 'whatsapp' 
+  | 'messenger' 
+  | 'reddit' 
+  | 'discord' 
+  | 'custom';
+
+export interface SocialMediaLink {
+  id: string;
+  platform: SocialPlatformType | string;
+  label: string;
+  url: string;
+  icon?: string;
+  enabled: boolean;
+  order: number;
+}
+
+// ================= 2. TOP HEADER / TOP BORDER CONTROL =================
+export interface TopBarItem {
+  id: string;
+  type: 'badge' | 'text' | 'button' | 'link' | 'status' | 'custom';
+  label: string;
+  text: string;
+  badgeText?: string;
+  linkUrl?: string;
+  isExternal?: boolean;
+  enabled: boolean;
+  order: number;
+}
+
+export interface TopBarSettings {
+  enabled: boolean;
+  items: TopBarItem[];
+}
+
+// ================= 3. MAIN NAVIGATION MENU CONTROL =================
+export interface NavigationItem {
+  id: string;
+  label: string;
+  url: string; // View name ('home', 'offers', 'contact', 'search') or category route ('category:smart-gadgets') or external link
+  categorySlug?: string;
+  isExternal?: boolean;
+  enabled: boolean;
+  order: number;
+  badge?: string;
+}
+
 export interface WebsiteSettings {
   siteTitle: string;
   logoText: string;
@@ -122,4 +205,9 @@ export interface WebsiteSettings {
   xUrl?: string;
   tiktokUrl?: string;
   youtubeUrl?: string;
+
+  // New persistent management structures
+  socialLinks?: SocialMediaLink[];
+  topBar?: TopBarSettings;
+  navigationItems?: NavigationItem[];
 }

@@ -1,4 +1,13 @@
-import { Category, Product, OfferCard, Advertisement, WebsiteSettings } from '../types';
+import { 
+  Category, 
+  Product, 
+  OfferCard, 
+  Advertisement, 
+  WebsiteSettings,
+  SocialMediaLink,
+  TopBarSettings,
+  NavigationItem
+} from '../types';
 
 export const defaultCategories: Category[] = [
   {
@@ -669,6 +678,80 @@ export const defaultAdvertisements: Advertisement[] = [
     priority: 1,
     createdAt: Date.now(),
   },
+  {
+    id: 'ad-details-1',
+    title: 'Verified USA Partner Deal: Extra 15% Off with Code TAKEZON15',
+    subtitle: 'Exclusive verified manufacturer rebate and flash coupon valid at official US checkout.',
+    placement: 'product_details',
+    adType: 'image',
+    imageUrl: 'https://images.unsplash.com/photo-1607083206869-4c7672e72a8a?auto=format&fit=crop&w=1200&q=80',
+    targetUrl: 'https://takezon.com/offers',
+    ctaText: 'Claim USA Coupon',
+    badgeText: 'EXCLUSIVE PROMO',
+    isActive: true,
+    priority: 10,
+    createdAt: Date.now(),
+  },
+];
+
+export const defaultSocialLinks: SocialMediaLink[] = [
+  { id: 'soc-1', platform: 'facebook', label: 'Facebook', url: 'https://facebook.com/takezon', enabled: true, order: 1 },
+  { id: 'soc-2', platform: 'instagram', label: 'Instagram', url: 'https://instagram.com/takezon_official', enabled: true, order: 2 },
+  { id: 'soc-3', platform: 'youtube', label: 'YouTube', url: 'https://youtube.com/@takezon_reviews', enabled: true, order: 3 },
+  { id: 'soc-4', platform: 'tiktok', label: 'TikTok', url: 'https://tiktok.com/@takezon', enabled: true, order: 4 },
+  { id: 'soc-5', platform: 'x', label: 'X / Twitter', url: 'https://x.com/takezon_deals', enabled: true, order: 5 },
+  { id: 'soc-6', platform: 'linkedin', label: 'LinkedIn', url: 'https://linkedin.com/company/takezon', enabled: false, order: 6 },
+  { id: 'soc-7', platform: 'pinterest', label: 'Pinterest', url: 'https://pinterest.com/takezon', enabled: false, order: 7 },
+  { id: 'soc-8', platform: 'telegram', label: 'Telegram', url: 'https://t.me/takezon', enabled: false, order: 8 },
+  { id: 'soc-9', platform: 'whatsapp', label: 'WhatsApp', url: 'https://wa.me/18008253966', enabled: false, order: 9 },
+  { id: 'soc-10', platform: 'messenger', label: 'Messenger', url: 'https://m.me/takezon', enabled: false, order: 10 },
+  { id: 'soc-11', platform: 'reddit', label: 'Reddit', url: 'https://reddit.com/r/takezon', enabled: false, order: 11 },
+  { id: 'soc-12', platform: 'discord', label: 'Discord', url: 'https://discord.gg/takezon', enabled: false, order: 12 },
+];
+
+export const defaultTopBarSettings: TopBarSettings = {
+  enabled: true,
+  items: [
+    {
+      id: 'tb-announcement',
+      type: 'text',
+      label: 'Deals Announcement',
+      badgeText: 'USA EXCLUSIVE',
+      text: 'Fall Tech Blowout: Up to 50% Off Verified USA Deals & Daily Curated Gear!',
+      linkUrl: 'offers',
+      isExternal: false,
+      enabled: true,
+      order: 1,
+    },
+    {
+      id: 'tb-status',
+      type: 'status',
+      label: 'Live Tracking Badge',
+      text: 'Live Price Tracking',
+      enabled: true,
+      order: 2,
+    },
+    {
+      id: 'tb-admin-btn',
+      type: 'button',
+      label: 'Admin Portal',
+      text: '', // Text hidden: only admin logo/icon will be displayed
+      linkUrl: 'admin',
+      isExternal: false,
+      enabled: true,
+      order: 3,
+    },
+  ],
+};
+
+export const defaultNavigationItems: NavigationItem[] = [
+  { id: 'nav-1', label: 'Smart Gadgets', url: 'category:smart-gadgets', categorySlug: 'smart-gadgets', enabled: true, order: 1 },
+  { id: 'nav-2', label: 'Camera & Drone', url: 'category:camera-gear', categorySlug: 'camera-gear', enabled: true, order: 2 },
+  { id: 'nav-3', label: 'PC & Desk', url: 'category:pc-accessories', categorySlug: 'pc-accessories', enabled: true, order: 3 },
+  { id: 'nav-4', label: 'Smart Living', url: 'category:kitchen-apps', categorySlug: 'kitchen-apps', enabled: true, order: 4 },
+  { id: 'nav-5', label: 'Fitness & Health', url: 'category:fitness-gear', categorySlug: 'fitness-gear', enabled: true, order: 5 },
+  { id: 'nav-6', label: 'Offer Card', url: 'offers', badge: 'Hot', enabled: true, order: 6 },
+  { id: 'nav-7', label: 'Contact', url: 'contact', enabled: true, order: 7 },
 ];
 
 export const defaultSettings: WebsiteSettings = {
@@ -692,4 +775,84 @@ export const defaultSettings: WebsiteSettings = {
   xUrl: 'https://x.com/takezon_deals',
   tiktokUrl: 'https://tiktok.com/@takezon',
   youtubeUrl: 'https://youtube.com/@takezon_reviews',
+  socialLinks: defaultSocialLinks,
+  topBar: defaultTopBarSettings,
+  navigationItems: defaultNavigationItems,
 };
+
+export function normalizeProduct(p: Partial<Product> | Product): Product {
+  const discountPrice = typeof p.discountPrice === 'number' ? p.discountPrice : 99.99;
+  const originalPrice = typeof p.originalPrice === 'number' ? p.originalPrice : 149.99;
+  const name = p.name || 'Curated Product';
+  
+  return {
+    id: p.id || 'prod-' + Math.random().toString(36).substring(2, 9),
+    name,
+    brand: p.brand || 'Verified USA Brand',
+    category: p.category || 'smart-gadgets',
+    shortDescription: p.shortDescription || '',
+    fullDescription: p.fullDescription || p.shortDescription || '',
+    images: p.images && p.images.length > 0 ? p.images : ['https://images.unsplash.com/photo-1526738549149-8e07eca6c147?auto=format&fit=crop&w=600&q=80'],
+    originalPrice,
+    discountPrice,
+    discountPercentage: typeof p.discountPercentage === 'number' ? p.discountPercentage : Math.round(((originalPrice - discountPrice) / originalPrice) * 100),
+    rating: typeof p.rating === 'number' ? p.rating : 4.8,
+    reviewCount: typeof p.reviewCount === 'number' ? p.reviewCount : 120,
+    tags: Array.isArray(p.tags) ? p.tags : ['Tech', 'USA Deal'],
+    availability: p.availability || 'In Stock',
+    productUrl: p.productUrl || 'https://takezon.com/deal',
+    affiliateUrl: p.affiliateUrl || p.productUrl || '',
+    ctaText: p.ctaText || 'View Deal',
+    isFeatured: p.isFeatured !== false,
+    isNew: p.isNew || false,
+    isDeal: p.isDeal !== false,
+    isTrending: p.isTrending || false,
+    specs: p.specs || {},
+    features: p.features || [],
+    createdAt: p.createdAt || Date.now(),
+    updatedAt: p.updatedAt || Date.now(),
+
+    // 4. Product Display Control
+    displayMode: p.displayMode || 'amount',
+    amountText: p.amountText || (p.discountPrice !== undefined ? `$${p.discountPrice.toFixed(2)}` : ''),
+    checkDetailsText: p.checkDetailsText || 'Check Details',
+    customDisplayText: p.customDisplayText || '',
+
+    // 5. Three Product Action Links with guaranteed valid fallbacks
+    amazonUrl: (p.amazonUrl && p.amazonUrl.trim().length > 0)
+      ? p.amazonUrl
+      : (p.affiliateUrl || p.productUrl || `https://www.amazon.com/s?k=${encodeURIComponent(name)}&tag=takezon-20`),
+    walmartUrl: (p.walmartUrl && p.walmartUrl.trim().length > 0)
+      ? p.walmartUrl
+      : `https://www.walmart.com/search?q=${encodeURIComponent(name)}`,
+    videoUrl: (p.videoUrl && p.videoUrl.trim().length > 0)
+      ? p.videoUrl
+      : `https://www.youtube.com/results?search_query=${encodeURIComponent(name + ' review')}`,
+
+    // 8. Custom Button Labels
+    amazonButtonText: p.amazonButtonText || 'Check Amazon',
+    walmartButtonText: p.walmartButtonText || 'Check Walmart',
+    videoButtonText: p.videoButtonText || 'Video View',
+
+    // 7. Granular Visibility Controls (Default to active so all enabled buttons show!)
+    showImage: p.showImage !== false,
+    showTitle: p.showTitle !== false,
+    showDescription: p.showDescription !== false,
+    showAmount: p.showAmount !== false,
+    showCheckDetails: p.showCheckDetails === true || p.displayMode === 'checkDetails',
+    showAmazonButton: p.showAmazonButton !== false,
+    showWalmartButton: p.showWalmartButton !== false,
+    showVideoButton: p.showVideoButton !== false,
+  };
+}
+
+export function normalizeSettings(s?: Partial<WebsiteSettings> | null): WebsiteSettings {
+  if (!s) return defaultSettings;
+  return {
+    ...defaultSettings,
+    ...s,
+    socialLinks: Array.isArray(s.socialLinks) && s.socialLinks.length > 0 ? s.socialLinks : defaultSocialLinks,
+    topBar: s.topBar && typeof s.topBar.enabled === 'boolean' && Array.isArray(s.topBar.items) ? s.topBar : defaultTopBarSettings,
+    navigationItems: Array.isArray(s.navigationItems) && s.navigationItems.length > 0 ? s.navigationItems : defaultNavigationItems,
+  };
+}

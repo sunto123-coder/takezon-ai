@@ -127,7 +127,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await signOut(auth);
         setUser(null);
         setIsAdmin(false);
-        const deniedMsg = 'এই Google account অনুমোদিত নয়।';
+        const deniedMsg = 'This Google account is not authorized as an administrator.';
         setError(deniedMsg);
         throw new Error(deniedMsg);
       }
@@ -136,21 +136,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsAdmin(true);
       setError(null);
     } catch (err: any) {
-      if (err.message === 'এই Google account অনুমোদিত নয়।' || err.message?.includes('অনুমোদিত নয়')) {
-        setError('এই Google account অনুমোদিত নয়।');
+      if (err.message?.includes('not authorized')) {
+        setError('This Google account is not authorized as an administrator.');
       } else if (err.code === 'permission-denied' || err.message?.includes('permission-denied') || err.message?.includes('permission denied')) {
-        setError('এই Google account অনুমোদিত নয়।');
+        setError('This Google account is not authorized as an administrator.');
       } else if (err.code === 'auth/popup-closed-by-user') {
-        setError('গুগল লগইন পপআপ উইন্ডো বন্ধ করা হয়েছে। পুনরায় চেষ্টা করুন।');
+        setError('Google sign-in popup window was closed. Please try again.');
       } else if (err.code === 'auth/cancelled-popup-request') {
         // Ignored duplicate popup request
       } else {
         const rawMsg = err.message || '';
         // Sanitize error messages so credentials or internal tokens are never shown
         if (/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(rawMsg) || /auth\//.test(rawMsg)) {
-          setError('এই Google account অনুমোদিত নয়।');
+          setError('This Google account is not authorized as an administrator.');
         } else {
-          setError(rawMsg || 'গুগল সাইন-ইন সম্পন্ন করা যায়নি।');
+          setError(rawMsg || 'Google sign-in could not be completed.');
         }
       }
       throw err;

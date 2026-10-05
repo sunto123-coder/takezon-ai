@@ -29,7 +29,9 @@ import {
   defaultProducts, 
   defaultOffers, 
   defaultAdvertisements, 
-  defaultSettings 
+  defaultSettings,
+  normalizeProduct,
+  normalizeSettings
 } from '../data/seedData';
 
 export type ViewType = 'home' | 'category' | 'offers' | 'contact' | 'admin' | 'search' | 'product';
@@ -81,11 +83,11 @@ interface StoreContextType {
 const StoreContext = createContext<StoreContextType>({} as StoreContextType);
 
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [products, setProducts] = useState<Product[]>(defaultProducts);
+  const [products, setProducts] = useState<Product[]>(() => defaultProducts.map(p => normalizeProduct(p)));
   const [categories, setCategories] = useState<Category[]>(defaultCategories);
   const [offers, setOffers] = useState<OfferCard[]>(defaultOffers);
   const [advertisements, setAdvertisements] = useState<Advertisement[]>(defaultAdvertisements);
-  const [settings, setSettings] = useState<WebsiteSettings>(defaultSettings);
+  const [settings, setSettings] = useState<WebsiteSettings>(() => normalizeSettings(defaultSettings));
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -142,7 +144,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const unsubProducts = listenToProducts((data) => {
       const deleted = getDeletedIds('products');
-      setProducts(data.filter((p) => !deleted.has(p.id)));
+      const normalized = data.map((p) => normalizeProduct(p));
+      setProducts(normalized.filter((p) => !deleted.has(p.id)));
     });
     const unsubCategories = listenToCategories((data) => {
       const deleted = getDeletedIds('categories');
@@ -156,7 +159,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const deleted = getDeletedIds('ads');
       setAdvertisements(data.filter((a) => !deleted.has(a.id)));
     });
-    const unsubSettings = listenToSettings((data) => setSettings(data));
+    const unsubSettings = listenToSettings((data) => setSettings(normalizeSettings(data)));
     
     // Only subscribe to customer messages for authenticated admin to adhere to Firestore Security Rules
     let unsubMessages: (() => void) | null = null;
@@ -333,15 +336,22 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const handleAffiliateClick = (targetUrl: string, title: string) => {
-    addToast(`Redirecting to verified seller: ${title.slice(0, 32)}...`, 'success');
+    if (!targetUrl || !targetUrl.trim()) return;
+    addToast(`Opening verified merchant deal: ${title.slice(0, 36)}...`, 'success');
     try {
-      // In iframe environments, open in new tab or top window safely
-      const win = window.open(targetUrl, '_blank', 'noopener,noreferrer');
-      if (!win) {
-        window.location.href = targetUrl;
-      }
+      const a = document.createElement('a');
+      a.href = targetUrl;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     } catch {
-      window.location.href = targetUrl;
+      try {
+        window.open(targetUrl, '_blank', 'noopener,noreferrer');
+      } catch (e) {
+        console.warn('Could not open external link:', e);
+      }
     }
   };
 

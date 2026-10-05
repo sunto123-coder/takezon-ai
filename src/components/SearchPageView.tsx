@@ -94,10 +94,10 @@ export const SearchPageView: React.FC = () => {
           type="button"
           onClick={goBack}
           className="group inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 hover:text-slate-950 text-xs font-bold border border-slate-200 shadow-xs hover:shadow-md transition-all duration-200 active:scale-95 cursor-pointer"
-          title="Return to previous view (ফিরে যান)"
+          title="Return to previous view"
         >
           <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1 text-indigo-600" />
-          <span>Back to Store (ফিরে যান)</span>
+          <span>Back to Store</span>
         </button>
 
         <button
@@ -135,7 +135,7 @@ export const SearchPageView: React.FC = () => {
             type="button"
             onClick={() => setSearchQuery('')}
             className="group absolute right-3 top-3.5 h-10 px-2.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-all active:scale-90 cursor-pointer flex items-center gap-1 text-xs font-bold"
-            title="Clear search query (সার্চ ক্লিয়ার করুন)"
+            title="Clear search query"
           >
             <X className="w-4 h-4 stroke-[2.5] transition-transform group-hover:rotate-90 duration-200" />
             <span className="hidden sm:inline">Clear</span>

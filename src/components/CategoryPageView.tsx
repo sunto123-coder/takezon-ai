@@ -102,10 +102,10 @@ export const CategoryPageView: React.FC = () => {
               type="button"
               onClick={goBack}
               className="group inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-slate-800/90 hover:bg-slate-700/95 active:bg-slate-900 text-slate-100 hover:text-white text-xs font-bold border border-slate-700 hover:border-amber-400/60 backdrop-blur-md transition-all duration-200 active:scale-95 cursor-pointer shadow-md"
-              title="Return to previous view (ফিরে যান)"
+              title="Return to previous view"
             >
               <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1 text-amber-400" />
-              <span>Back to Store (ফিরে যান)</span>
+              <span>Back to Store</span>
             </button>
 
             <div className="flex items-center gap-2 text-xs text-slate-400 bg-slate-950/60 px-3 py-1.5 rounded-xl border border-slate-800">

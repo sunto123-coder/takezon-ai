@@ -13,8 +13,11 @@ import {
   updateWebsiteSettings,
   markMessageRead
 } from '../services/firebaseService';
-import { Product, Category, OfferCard, Advertisement, WebsiteSettings } from '../types';
+import { Product, Category, OfferCard, Advertisement, WebsiteSettings, SocialMediaLink, TopBarSettings, NavigationItem } from '../types';
 import { AdCodeRenderer } from '../components/AdCodeRenderer';
+import { SocialLinksManager } from './SocialLinksManager';
+import { TopBarManager } from './TopBarManager';
+import { NavigationManager } from './NavigationManager';
 import { 
   LayoutDashboard, 
   Package, 
@@ -39,6 +42,7 @@ import {
   ShieldCheck, 
   Clock, 
   Eye, 
+  EyeOff,
   ChevronRight,
   Sliders,
   DollarSign,
@@ -47,7 +51,11 @@ import {
   FileCode,
   Layers,
   Copy,
-  ArrowLeft
+  ArrowLeft,
+  Share2,
+  Compass,
+  Play,
+  ShoppingCart
 } from 'lucide-react';
 
 const AD_CODE_TEMPLATES = [
@@ -102,7 +110,7 @@ const AD_CODE_TEMPLATES = [
   }
 ];
 
-type AdminTab = 'dashboard' | 'products' | 'categories' | 'offers' | 'advertisements' | 'messages' | 'settings' | 'analytics';
+type AdminTab = 'dashboard' | 'products' | 'categories' | 'offers' | 'advertisements' | 'social' | 'topbar' | 'navigation' | 'messages' | 'settings' | 'analytics';
 
 export const AdminDashboard: React.FC = () => {
   const { user, logOut } = useAuth();
@@ -161,6 +169,32 @@ export const AdminDashboard: React.FC = () => {
     isNew: false,
     isDeal: true,
     isTrending: false,
+
+    // 4. Product Display Control
+    displayMode: 'amount',
+    amountText: '',
+    checkDetailsText: 'Check Details',
+    customDisplayText: '',
+
+    // 5. Three Product Action Links
+    amazonUrl: 'https://amazon.com/dp/example?tag=takezon-20',
+    walmartUrl: '',
+    videoUrl: '',
+
+    // 8. Custom Button Labels
+    amazonButtonText: 'Check Amazon',
+    walmartButtonText: 'Check Walmart',
+    videoButtonText: 'Video View',
+
+    // 7. Product-Level Visibility Controls
+    showImage: true,
+    showTitle: true,
+    showDescription: true,
+    showAmount: true,
+    showCheckDetails: false,
+    showAmazonButton: true,
+    showWalmartButton: false,
+    showVideoButton: false,
   });
 
   // Offer Modal State
@@ -261,13 +295,59 @@ export const AdminDashboard: React.FC = () => {
       isNew: true,
       isDeal: true,
       isTrending: false,
+
+      // 4. Product Display Control
+      displayMode: 'amount',
+      amountText: '',
+      checkDetailsText: 'Check Details',
+      customDisplayText: '',
+
+      // 5. Three Product Action Links
+      amazonUrl: 'https://amazon.com/dp/example?tag=takezon-20',
+      walmartUrl: '',
+      videoUrl: '',
+
+      // 8. Custom Button Labels
+      amazonButtonText: 'Check Amazon',
+      walmartButtonText: 'Check Walmart',
+      videoButtonText: 'Video View',
+
+      // 7. Product-Level Visibility Controls
+      showImage: true,
+      showTitle: true,
+      showDescription: true,
+      showAmount: true,
+      showCheckDetails: false,
+      showAmazonButton: true,
+      showWalmartButton: false,
+      showVideoButton: false,
     });
     setIsProductModalOpen(true);
   };
 
   const handleOpenEditProduct = (prod: Product) => {
     setEditingProduct(prod);
-    setProductForm({ ...prod });
+    setProductForm({
+      ...prod,
+      displayMode: prod.displayMode || (prod.showCheckDetails ? 'checkDetails' : 'amount'),
+      amountText: prod.amountText || (prod.discountPrice !== undefined ? `$${prod.discountPrice.toFixed(2)}` : ''),
+      checkDetailsText: prod.checkDetailsText || 'Check Details',
+      customDisplayText: prod.customDisplayText || '',
+      amazonUrl: prod.amazonUrl || prod.affiliateUrl || prod.productUrl || '',
+      walmartUrl: prod.walmartUrl || '',
+      videoUrl: prod.videoUrl || '',
+      amazonButtonText: prod.amazonButtonText || 'Check Amazon',
+      walmartButtonText: prod.walmartButtonText || 'Check Walmart',
+      videoButtonText: prod.videoButtonText || 'Video View',
+      showImage: prod.showImage !== false,
+      showTitle: prod.showTitle !== false,
+      showDescription: prod.showDescription !== false,
+      showAmount: prod.showAmount !== false,
+      showCheckDetails: prod.showCheckDetails === true || prod.displayMode === 'checkDetails',
+      showAmazonButton: prod.showAmazonButton !== false,
+      showWalmartButton: prod.showWalmartButton !== false,
+      showVideoButton: prod.showVideoButton !== false,
+    });
     setIsProductModalOpen(true);
   };
 
@@ -278,7 +358,7 @@ export const AdminDashboard: React.FC = () => {
       const disc = Number(productForm.discountPrice) || 0;
       const pct = orig > disc && orig > 0 ? Math.round(((orig - disc) / orig) * 100) : 0;
 
-      const payload = {
+      const payload: Partial<Product> = {
         name: productForm.name || 'Untitled Product',
         brand: productForm.brand || 'Verified Brand',
         category: productForm.category || 'smart-gadgets',
@@ -299,6 +379,32 @@ export const AdminDashboard: React.FC = () => {
         isNew: !!productForm.isNew,
         isDeal: !!productForm.isDeal,
         isTrending: !!productForm.isTrending,
+
+        // 4. Product Display Control
+        displayMode: productForm.displayMode || 'amount',
+        amountText: productForm.amountText || '',
+        checkDetailsText: productForm.checkDetailsText || 'Check Details',
+        customDisplayText: productForm.customDisplayText || '',
+
+        // 5. Three Product Action Links
+        amazonUrl: productForm.amazonUrl || '',
+        walmartUrl: productForm.walmartUrl || '',
+        videoUrl: productForm.videoUrl || '',
+
+        // 8. Custom Button Labels
+        amazonButtonText: productForm.amazonButtonText || 'Check Amazon',
+        walmartButtonText: productForm.walmartButtonText || 'Check Walmart',
+        videoButtonText: productForm.videoButtonText || 'Video View',
+
+        // 7. Granular Visibility Controls
+        showImage: productForm.showImage !== false,
+        showTitle: productForm.showTitle !== false,
+        showDescription: productForm.showDescription !== false,
+        showAmount: productForm.showAmount !== false,
+        showCheckDetails: !!productForm.showCheckDetails,
+        showAmazonButton: productForm.showAmazonButton !== false,
+        showWalmartButton: productForm.showWalmartButton !== false,
+        showVideoButton: productForm.showVideoButton !== false,
       };
 
       if (editingProduct) {
@@ -312,6 +418,19 @@ export const AdminDashboard: React.FC = () => {
     } catch (err: any) {
       addToast('Error saving product: ' + err.message, 'error');
     }
+  };
+
+  // Handlers for Social Media Links, Top Bar, Navigation Menu
+  const handleSaveSocialLinks = async (links: SocialMediaLink[]) => {
+    await updateWebsiteSettings({ socialLinks: links });
+  };
+
+  const handleSaveTopBar = async (tb: TopBarSettings) => {
+    await updateWebsiteSettings({ topBar: tb });
+  };
+
+  const handleSaveNavigation = async (navItems: NavigationItem[]) => {
+    await updateWebsiteSettings({ navigationItems: navItems });
   };
 
   const handleDeleteProduct = (id: string, name: string) => {
@@ -340,19 +459,19 @@ export const AdminDashboard: React.FC = () => {
     try {
       if (itemToDelete.type === 'product') {
         await deleteProduct(itemToDelete.id);
-        addToast(`প্রোডাক্ট "${itemToDelete.name}" সফলভাবে ডিলিট করা হয়েছে!`, 'success');
+        addToast(`Product "${itemToDelete.name}" was deleted successfully!`, 'success');
       } else if (itemToDelete.type === 'offer') {
         await deleteOffer(itemToDelete.id);
-        addToast(`অফার কার্ড "${itemToDelete.name}" সফলভাবে ডিলিট হয়েছে!`, 'success');
+        addToast(`Offer card "${itemToDelete.name}" was deleted successfully!`, 'success');
       } else if (itemToDelete.type === 'ad') {
         await deleteAdvertisement(itemToDelete.id);
-        addToast(`ব্যানার বিজ্ঞাপন "${itemToDelete.name}" সফলভাবে ডিলিট হয়েছে!`, 'success');
+        addToast(`Banner advertisement "${itemToDelete.name}" was deleted successfully!`, 'success');
       } else if (itemToDelete.type === 'category') {
         await deleteCategory(itemToDelete.id);
-        addToast(`ক্যাটাগরি "${itemToDelete.name}" মুছে ফেলা হয়েছে!`, 'success');
+        addToast(`Category "${itemToDelete.name}" was deleted successfully!`, 'success');
       } else if (itemToDelete.type === 'message') {
         await deleteMessage(itemToDelete.id);
-        addToast(`মেসেজ সফলভাবে ডিলিট হয়েছে!`, 'success');
+        addToast(`Message deleted successfully!`, 'success');
       }
       setItemToDelete(null);
     } catch (err: any) {
@@ -635,6 +754,60 @@ export const AdminDashboard: React.FC = () => {
               </span>
             </button>
 
+            {/* Social Media Links Management */}
+            <button
+              onClick={() => setActiveTab('social')}
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'social'
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Share2 className="w-4 h-4 text-indigo-400" />
+                <span>Social Media Links</span>
+              </div>
+              <span className="px-2 py-0.5 rounded-full text-[10px] bg-indigo-500/20 text-indigo-300">
+                {(settings.socialLinks || []).filter(s => s.enabled !== false).length}
+              </span>
+            </button>
+
+            {/* Top Bar / Header Control */}
+            <button
+              onClick={() => setActiveTab('topbar')}
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'topbar'
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Sliders className="w-4 h-4 text-amber-400" />
+                <span>Top Bar & Header</span>
+              </div>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${settings.topBar?.enabled !== false ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-400'}`}>
+                {settings.topBar?.enabled !== false ? 'ON' : 'OFF'}
+              </span>
+            </button>
+
+            {/* Main Navigation Menu Control */}
+            <button
+              onClick={() => setActiveTab('navigation')}
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'navigation'
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Compass className="w-4 h-4 text-emerald-400" />
+                <span>Navigation Menu</span>
+              </div>
+              <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/20 text-emerald-300">
+                {(settings.navigationItems || []).filter(n => n.enabled !== false).length}
+              </span>
+            </button>
+
             <button
               onClick={() => setActiveTab('messages')}
               className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
@@ -686,11 +859,11 @@ export const AdminDashboard: React.FC = () => {
             type="button"
             onClick={() => navigateTo('home')}
             className="group w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-xs text-white font-bold transition-all cursor-pointer border border-slate-700 hover:border-amber-400/50 shadow-md active:scale-95"
-            title="Return to public store (স্টোরে ফিরে যান)"
+            title="Return to public storefront"
           >
             <span className="flex items-center gap-2">
               <ArrowLeft className="w-3.5 h-3.5 text-amber-400 transition-transform group-hover:-translate-x-1" />
-              <span>Back to Storefront (ফিরে যান)</span>
+              <span>Back to Storefront</span>
             </span>
             <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
           </button>
@@ -983,86 +1156,135 @@ export const AdminDashboard: React.FC = () => {
                     <tr>
                       <th className="py-3 px-4">Product</th>
                       <th className="py-3 px-4">Category</th>
-                      <th className="py-3 px-4">Price / Discount</th>
+                      <th className="py-3 px-4">Display Mode / Value</th>
+                      <th className="py-3 px-4">Action Links</th>
                       <th className="py-3 px-4">Badges</th>
-                      <th className="py-3 px-4">CTA</th>
                       <th className="py-3 px-4 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800">
-                    {adminFilteredProducts.map((prod) => (
-                      <tr key={prod.id} className="hover:bg-slate-800/40 transition-colors">
-                        <td className="py-3.5 px-4 flex items-center gap-3 max-w-xs">
-                          <img
-                            src={prod.images[0]}
-                            alt=""
-                            className="w-12 h-12 rounded-lg object-cover bg-slate-800 shrink-0 border border-slate-700"
-                          />
-                          <div className="min-w-0">
-                            <div className="font-bold text-white truncate">{prod.name}</div>
-                            <div className="text-[11px] text-slate-400">{prod.brand}</div>
-                          </div>
-                        </td>
+                    {adminFilteredProducts.map((prod) => {
+                      const isCheckDetails = prod.displayMode === 'checkDetails';
+                      const hasAmazon = prod.showAmazonButton !== false && Boolean((prod.amazonUrl || prod.affiliateUrl || prod.productUrl)?.trim());
+                      const hasWalmart = prod.showWalmartButton !== false && Boolean(prod.walmartUrl?.trim());
+                      const hasVideo = prod.showVideoButton !== false && Boolean(prod.videoUrl?.trim());
 
-                        <td className="py-3.5 px-4">
-                          <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-800 text-indigo-300 border border-slate-700">
-                            {categories.find(c => c.slug === prod.category)?.name || prod.category}
-                          </span>
-                        </td>
-
-                        <td className="py-3.5 px-4">
-                          <div className="font-bold text-white">${prod.discountPrice.toFixed(2)}</div>
-                          {prod.originalPrice > prod.discountPrice && (
-                            <div className="text-[11px] text-slate-400 line-through">
-                              ${prod.originalPrice.toFixed(2)} (-{prod.discountPercentage}%)
+                      return (
+                        <tr key={prod.id} className="hover:bg-slate-800/40 transition-colors">
+                          <td className="py-3.5 px-4 flex items-center gap-3 max-w-xs">
+                            <img
+                              src={prod.images[0]}
+                              alt=""
+                              className="w-12 h-12 rounded-lg object-cover bg-slate-800 shrink-0 border border-slate-700"
+                            />
+                            <div className="min-w-0">
+                              <div className="font-bold text-white truncate">{prod.name}</div>
+                              <div className="text-[11px] text-slate-400">{prod.brand}</div>
                             </div>
-                          )}
-                        </td>
+                          </td>
 
-                        <td className="py-3.5 px-4">
-                          <div className="flex flex-wrap gap-1">
-                            {prod.isDeal && (
-                              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-red-950 text-red-400 border border-red-800">
-                                DEAL
-                              </span>
-                            )}
-                            {prod.isFeatured && (
-                              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-950 text-indigo-400 border border-indigo-800">
-                                FEAT
-                              </span>
-                            )}
-                            {prod.isTrending && (
-                              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-950 text-amber-400 border border-amber-800">
-                                TREND
-                              </span>
-                            )}
-                          </div>
-                        </td>
+                          <td className="py-3.5 px-4">
+                            <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-800 text-indigo-300 border border-slate-700">
+                              {categories.find(c => c.slug === prod.category)?.name || prod.category}
+                            </span>
+                          </td>
 
-                        <td className="py-3.5 px-4 font-semibold text-slate-200">
-                          {prod.ctaText || 'View Deal'}
-                        </td>
+                          <td className="py-3.5 px-4">
+                            {isCheckDetails ? (
+                              <div>
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                                  <Eye className="w-3 h-3 text-cyan-400" />
+                                  <span>{prod.checkDetailsText || 'Check Details'}</span>
+                                </span>
+                                <div className="text-[10px] text-slate-400 mt-0.5">Mode: Check Details</div>
+                              </div>
+                            ) : (
+                              <div>
+                                <div className="font-bold text-white">
+                                  {prod.amountText || `$${prod.discountPrice.toFixed(2)}`}
+                                </div>
+                                {!prod.amountText && prod.originalPrice > prod.discountPrice && (
+                                  <div className="text-[11px] text-slate-400 line-through">
+                                    ${prod.originalPrice.toFixed(2)} (-{prod.discountPercentage}%)
+                                  </div>
+                                )}
+                                <div className="text-[10px] text-emerald-400 font-semibold mt-0.5">Mode: Amount</div>
+                              </div>
+                            )}
+                          </td>
 
-                        <td className="py-3.5 px-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => handleOpenEditProduct(prod)}
-                              className="p-1.5 rounded-lg bg-slate-800 hover:bg-indigo-600 text-slate-300 hover:text-white transition-colors cursor-pointer"
-                              title="Edit product"
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteProduct(prod.id, prod.name)}
-                              className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white transition-colors cursor-pointer"
-                              title="Delete product"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                          <td className="py-3.5 px-4">
+                            <div className="flex flex-wrap gap-1.5">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 ${
+                                hasAmazon 
+                                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' 
+                                  : 'bg-slate-800 text-slate-500 line-through'
+                              }`}>
+                                <ShoppingCart className="w-2.5 h-2.5" />
+                                <span>Amazon</span>
+                              </span>
+
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 ${
+                                hasWalmart 
+                                  ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' 
+                                  : 'bg-slate-800 text-slate-500 line-through'
+                              }`}>
+                                <Sparkles className="w-2.5 h-2.5" />
+                                <span>Walmart</span>
+                              </span>
+
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 ${
+                                hasVideo 
+                                  ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' 
+                                  : 'bg-slate-800 text-slate-500 line-through'
+                              }`}>
+                                <Play className="w-2.5 h-2.5 fill-current" />
+                                <span>Video</span>
+                              </span>
+                            </div>
+                          </td>
+
+                          <td className="py-3.5 px-4">
+                            <div className="flex flex-wrap gap-1">
+                              {prod.isDeal && (
+                                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-red-950 text-red-400 border border-red-800">
+                                  DEAL
+                                </span>
+                              )}
+                              {prod.isFeatured && (
+                                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-950 text-indigo-400 border border-indigo-800">
+                                  FEAT
+                                </span>
+                              )}
+                              {prod.isTrending && (
+                                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-950 text-amber-400 border border-amber-800">
+                                  TREND
+                                </span>
+                              )}
+                            </div>
+                          </td>
+
+                          <td className="py-3.5 px-4 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => handleOpenEditProduct(prod)}
+                                className="p-1.5 rounded-lg bg-slate-800 hover:bg-indigo-600 text-slate-300 hover:text-white transition-colors cursor-pointer"
+                                title="Edit product"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteProduct(prod.id, prod.name)}
+                                className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white transition-colors cursor-pointer"
+                                title="Delete product"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -1387,6 +1609,34 @@ export const AdminDashboard: React.FC = () => {
           </div>
         )}
 
+        {/* ================= TAB: SOCIAL MEDIA LINKS MANAGEMENT ================= */}
+        {activeTab === 'social' && (
+          <SocialLinksManager 
+            settings={settings} 
+            onSave={handleSaveSocialLinks} 
+            addToast={addToast} 
+          />
+        )}
+
+        {/* ================= TAB: TOP BAR / HEADER CONTROL ================= */}
+        {activeTab === 'topbar' && (
+          <TopBarManager 
+            settings={settings} 
+            onSave={handleSaveTopBar} 
+            addToast={addToast} 
+          />
+        )}
+
+        {/* ================= TAB: MAIN NAVIGATION MENU CONTROL ================= */}
+        {activeTab === 'navigation' && (
+          <NavigationManager 
+            settings={settings} 
+            categories={categories}
+            onSave={handleSaveNavigation} 
+            addToast={addToast} 
+          />
+        )}
+
         {/* ================= TAB 7: WEBSITE SETTINGS ================= */}
         {activeTab === 'settings' && (
           <div className="space-y-6 animate-in fade-in duration-150">
@@ -1397,6 +1647,66 @@ export const AdminDashboard: React.FC = () => {
               <p className="text-xs text-slate-400 mt-1">
                 Update headlines, hero banners, top announcements, social links, and legal disclosures without editing code.
               </p>
+            </div>
+
+            {/* Quick Management Shortcuts */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl">
+              <button
+                type="button"
+                onClick={() => setActiveTab('social')}
+                className="p-4 rounded-2xl bg-slate-900 border border-slate-800 hover:border-indigo-500/60 text-left transition-all cursor-pointer group shadow-md"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <Share2 className="w-5 h-5 text-indigo-400 group-hover:scale-110 transition-transform" />
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300">
+                    {(settings.socialLinks || []).filter(s => s.enabled !== false).length} Active
+                  </span>
+                </div>
+                <div className="text-xs font-bold text-white group-hover:text-amber-400 transition-colors">
+                  Social Media Links
+                </div>
+                <div className="text-[11px] text-slate-400 mt-1">
+                  Add, edit, reorder & toggle platforms
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('topbar')}
+                className="p-4 rounded-2xl bg-slate-900 border border-slate-800 hover:border-amber-500/60 text-left transition-all cursor-pointer group shadow-md"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <Sliders className="w-5 h-5 text-amber-400 group-hover:scale-110 transition-transform" />
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${settings.topBar?.enabled !== false ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-400'}`}>
+                    {settings.topBar?.enabled !== false ? 'ENABLED' : 'HIDDEN'}
+                  </span>
+                </div>
+                <div className="text-xs font-bold text-white group-hover:text-amber-400 transition-colors">
+                  Top Header / Bar Control
+                </div>
+                <div className="text-[11px] text-slate-400 mt-1">
+                  Full border, announcement, badge & button controls
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('navigation')}
+                className="p-4 rounded-2xl bg-slate-900 border border-slate-800 hover:border-emerald-500/60 text-left transition-all cursor-pointer group shadow-md"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <Compass className="w-5 h-5 text-emerald-400 group-hover:scale-110 transition-transform" />
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">
+                    {(settings.navigationItems || []).filter(n => n.enabled !== false).length} Visible
+                  </span>
+                </div>
+                <div className="text-xs font-bold text-white group-hover:text-amber-400 transition-colors">
+                  Main Navigation Menu
+                </div>
+                <div className="text-[11px] text-slate-400 mt-1">
+                  Labels, routes, categories, ordering & visibility
+                </div>
+              </button>
             </div>
 
             <form onSubmit={handleSaveSettings} className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 max-w-4xl">
@@ -1645,7 +1955,7 @@ export const AdminDashboard: React.FC = () => {
                 type="button"
                 onClick={() => setIsProductModalOpen(false)}
                 className="group p-2 rounded-xl bg-slate-800 hover:bg-rose-950/70 text-slate-400 hover:text-rose-300 border border-slate-700/80 hover:border-rose-700/80 transition-all cursor-pointer active:scale-90"
-                title="Close modal (বন্ধ করুন / ESC)"
+                title="Close modal (ESC)"
               >
                 <X className="w-5 h-5 stroke-[2.5] transition-transform group-hover:rotate-90 duration-200" />
               </button>
@@ -1793,6 +2103,399 @@ export const AdminDashboard: React.FC = () => {
                 />
               </div>
 
+              {/* ================= 4. PRODUCT DISPLAY CONTROL ================= */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-slate-800/80 border border-slate-700/80 space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-700 pb-2">
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="w-4 h-4 text-amber-400" />
+                    <span className="font-heading font-bold text-xs uppercase tracking-wider text-amber-400">
+                      Product Display & Presentation System
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    Configure Amount vs Check Details
+                  </span>
+                </div>
+
+                {/* Display Mode Choice: Option A (Amount) vs Option B (Check Details) */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase mb-2">
+                    Presentation Display Mode *
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setProductForm({ 
+                        ...productForm, 
+                        displayMode: 'amount',
+                        showAmount: true,
+                        showCheckDetails: false
+                      })}
+                      className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                        productForm.displayMode !== 'checkDetails'
+                          ? 'bg-indigo-600/20 border-indigo-500 text-white shadow-xs ring-1 ring-indigo-500'
+                          : 'bg-slate-900 border-slate-700 text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <div className="font-bold text-xs flex items-center gap-1.5">
+                        <DollarSign className="w-3.5 h-3.5 text-amber-400" />
+                        <span>OPTION A: Show Amount / Price</span>
+                      </div>
+                      <div className="text-[10px] text-slate-400 mt-1">
+                        Displays dollar value or custom formatted price
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setProductForm({ 
+                        ...productForm, 
+                        displayMode: 'checkDetails',
+                        showAmount: false,
+                        showCheckDetails: true
+                      })}
+                      className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                        productForm.displayMode === 'checkDetails'
+                          ? 'bg-indigo-600/20 border-indigo-500 text-white shadow-xs ring-1 ring-indigo-500'
+                          : 'bg-slate-900 border-slate-700 text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <div className="font-bold text-xs flex items-center gap-1.5">
+                        <Eye className="w-3.5 h-3.5 text-cyan-400" />
+                        <span>OPTION B: "Check Details"</span>
+                      </div>
+                      <div className="text-[10px] text-slate-400 mt-1">
+                        Displays text button instead of price
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Amount text & Check Details text inputs */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 uppercase mb-1">
+                      Custom Amount / Value Text
+                    </label>
+                    <input
+                      type="text"
+                      placeholder={`e.g. $${productForm.discountPrice || '49.99'} or From $29`}
+                      value={productForm.amountText || ''}
+                      onChange={(e) => setProductForm({ ...productForm, amountText: e.target.value })}
+                      className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs focus:outline-hidden focus:border-indigo-500"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-1">
+                      Leave empty to auto-format as ${Number(productForm.discountPrice || 0).toFixed(2)}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 uppercase mb-1">
+                      Check Details Button / Text
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Check Details"
+                      value={productForm.checkDetailsText || 'Check Details'}
+                      onChange={(e) => setProductForm({ ...productForm, checkDetailsText: e.target.value })}
+                      className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs focus:outline-hidden focus:border-indigo-500"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-1">
+                      Default: "Check Details"
+                    </p>
+                  </div>
+                </div>
+
+                {/* Optional Custom Display Text */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase mb-1">
+                    Optional Custom Badge / Display Subtext
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Verified USA Price Drop, In Stock Now"
+                    value={productForm.customDisplayText || ''}
+                    onChange={(e) => setProductForm({ ...productForm, customDisplayText: e.target.value })}
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs focus:outline-hidden"
+                  />
+                </div>
+
+                {/* Explicit toggles for Show Amount and Show Check Details */}
+                <div className="flex flex-wrap items-center gap-5 pt-2 border-t border-slate-700/80">
+                  <label className="flex items-center gap-2 text-xs font-bold text-slate-300 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={productForm.showAmount !== false && productForm.displayMode !== 'checkDetails'}
+                      onChange={(e) => setProductForm({ 
+                        ...productForm, 
+                        showAmount: e.target.checked,
+                        displayMode: e.target.checked ? 'amount' : 'checkDetails'
+                      })}
+                      className="accent-indigo-600 rounded"
+                    />
+                    <span>Show Amount ON/OFF</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 text-xs font-bold text-slate-300 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={productForm.showCheckDetails === true || productForm.displayMode === 'checkDetails'}
+                      onChange={(e) => setProductForm({ 
+                        ...productForm, 
+                        showCheckDetails: e.target.checked,
+                        displayMode: e.target.checked ? 'checkDetails' : 'amount'
+                      })}
+                      className="accent-cyan-500 rounded"
+                    />
+                    <span>Show Check Details ON/OFF</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* ================= 5 & 8. THREE PRODUCT ACTION LINKS ================= */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-slate-800/80 border border-slate-700/80 space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-700 pb-2">
+                  <div className="flex items-center gap-2">
+                    <ExternalLink className="w-4 h-4 text-indigo-400" />
+                    <span className="font-heading font-bold text-xs uppercase tracking-wider text-indigo-300">
+                      Three Product Action Links (Amazon, Walmart, Video View)
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    Configurable URLs & Labels
+                  </span>
+                </div>
+
+                {/* 1. Amazon Link */}
+                <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+                      <ShoppingCart className="w-3.5 h-3.5" />
+                      1. Check Amazon Action
+                    </span>
+                    <label className="flex items-center gap-1.5 text-xs text-slate-300 font-bold cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={productForm.showAmazonButton !== false}
+                        onChange={(e) => setProductForm({ ...productForm, showAmazonButton: e.target.checked })}
+                        className="accent-amber-500 rounded"
+                      />
+                      <span>Enable Button</span>
+                    </label>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                        Amazon Product / Affiliate URL
+                      </label>
+                      <input
+                        type="url"
+                        placeholder="https://amazon.com/dp/B00... or affiliate link"
+                        value={productForm.amazonUrl || ''}
+                        onChange={(e) => setProductForm({ ...productForm, amazonUrl: e.target.value })}
+                        className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:outline-hidden focus:border-amber-500 font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                        Button Label Text
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Check Amazon"
+                        value={productForm.amazonButtonText || 'Check Amazon'}
+                        onChange={(e) => setProductForm({ ...productForm, amazonButtonText: e.target.value })}
+                        className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:outline-hidden"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Walmart Link */}
+                <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-blue-400 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      2. Check Walmart Action
+                    </span>
+                    <label className="flex items-center gap-1.5 text-xs text-slate-300 font-bold cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={productForm.showWalmartButton !== false}
+                        onChange={(e) => setProductForm({ ...productForm, showWalmartButton: e.target.checked })}
+                        className="accent-blue-500 rounded"
+                      />
+                      <span>Enable Button</span>
+                    </label>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                        Walmart Product / Deal URL
+                      </label>
+                      <input
+                        type="url"
+                        placeholder="https://walmart.com/ip/... (leave empty if none)"
+                        value={productForm.walmartUrl || ''}
+                        onChange={(e) => setProductForm({ ...productForm, walmartUrl: e.target.value })}
+                        className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:outline-hidden focus:border-blue-500 font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                        Button Label Text
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Check Walmart"
+                        value={productForm.walmartButtonText || 'Check Walmart'}
+                        onChange={(e) => setProductForm({ ...productForm, walmartButtonText: e.target.value })}
+                        className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:outline-hidden"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Video View Link */}
+                <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-rose-400 flex items-center gap-1.5">
+                      <Play className="w-3.5 h-3.5 fill-current" />
+                      3. Video View Action (YouTube, Vimeo, TikTok, Facebook, etc.)
+                    </span>
+                    <label className="flex items-center gap-1.5 text-xs text-slate-300 font-bold cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={productForm.showVideoButton !== false}
+                        onChange={(e) => setProductForm({ ...productForm, showVideoButton: e.target.checked })}
+                        className="accent-rose-500 rounded"
+                      />
+                      <span>Enable Button</span>
+                    </label>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                        Video Review / Demo URL
+                      </label>
+                      <input
+                        type="url"
+                        placeholder="https://youtube.com/watch?v=... or TikTok/Vimeo"
+                        value={productForm.videoUrl || ''}
+                        onChange={(e) => setProductForm({ ...productForm, videoUrl: e.target.value })}
+                        className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:outline-hidden focus:border-rose-500 font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                        Button Label Text
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Video View"
+                        value={productForm.videoButtonText || 'Video View'}
+                        onChange={(e) => setProductForm({ ...productForm, videoButtonText: e.target.value })}
+                        className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:outline-hidden"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ================= 7. PRODUCT-LEVEL VISIBILITY CONTROLS ================= */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-slate-800/80 border border-slate-700/80 space-y-3">
+                <div className="border-b border-slate-700 pb-2">
+                  <span className="font-heading font-bold text-xs uppercase tracking-wider text-emerald-400">
+                    Product-Level Element Visibility Controls
+                  </span>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Independently toggle visibility of each element on the public product card and details page.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+                  <label className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold text-slate-300 cursor-pointer hover:border-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={productForm.showImage !== false}
+                      onChange={(e) => setProductForm({ ...productForm, showImage: e.target.checked })}
+                      className="accent-indigo-600 rounded"
+                    />
+                    <span>Product Image</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold text-slate-300 cursor-pointer hover:border-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={productForm.showTitle !== false}
+                      onChange={(e) => setProductForm({ ...productForm, showTitle: e.target.checked })}
+                      className="accent-indigo-600 rounded"
+                    />
+                    <span>Product Title</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold text-slate-300 cursor-pointer hover:border-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={productForm.showDescription !== false}
+                      onChange={(e) => setProductForm({ ...productForm, showDescription: e.target.checked })}
+                      className="accent-indigo-600 rounded"
+                    />
+                    <span>Description</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold text-slate-300 cursor-pointer hover:border-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={productForm.showAmount !== false}
+                      onChange={(e) => setProductForm({ ...productForm, showAmount: e.target.checked })}
+                      className="accent-indigo-600 rounded"
+                    />
+                    <span>Amount/Value</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold text-slate-300 cursor-pointer hover:border-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={!!productForm.showCheckDetails}
+                      onChange={(e) => setProductForm({ ...productForm, showCheckDetails: e.target.checked })}
+                      className="accent-indigo-600 rounded"
+                    />
+                    <span>Check Details</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold text-slate-300 cursor-pointer hover:border-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={productForm.showAmazonButton !== false}
+                      onChange={(e) => setProductForm({ ...productForm, showAmazonButton: e.target.checked })}
+                      className="accent-amber-500 rounded"
+                    />
+                    <span>Check Amazon</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold text-slate-300 cursor-pointer hover:border-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={productForm.showWalmartButton !== false}
+                      onChange={(e) => setProductForm({ ...productForm, showWalmartButton: e.target.checked })}
+                      className="accent-blue-500 rounded"
+                    />
+                    <span>Check Walmart</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold text-slate-300 cursor-pointer hover:border-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={productForm.showVideoButton !== false}
+                      onChange={(e) => setProductForm({ ...productForm, showVideoButton: e.target.checked })}
+                      className="accent-rose-500 rounded"
+                    />
+                    <span>Video View</span>
+                  </label>
+                </div>
+              </div>
+
               {/* Toggles */}
               <div className="flex flex-wrap items-center gap-6 pt-2">
                 <label className="flex items-center gap-2 text-xs font-bold text-slate-300 cursor-pointer">
@@ -1876,7 +2579,7 @@ export const AdminDashboard: React.FC = () => {
                 type="button"
                 onClick={() => setIsOfferModalOpen(false)} 
                 className="group p-2 rounded-xl bg-slate-800 hover:bg-rose-950/70 text-slate-400 hover:text-rose-300 border border-slate-700/80 hover:border-rose-700/80 transition-all cursor-pointer active:scale-90"
-                title="Close modal (বন্ধ করুন / ESC)"
+                title="Close modal (ESC)"
               >
                 <X className="w-5 h-5 stroke-[2.5] transition-transform group-hover:rotate-90 duration-200" />
               </button>
@@ -2041,7 +2744,7 @@ export const AdminDashboard: React.FC = () => {
                 type="button"
                 onClick={() => setIsAdModalOpen(false)} 
                 className="group p-2 rounded-xl bg-slate-800 hover:bg-rose-950/70 text-slate-400 hover:text-rose-300 border border-slate-700/80 hover:border-rose-700/80 transition-all cursor-pointer active:scale-90"
-                title="Close modal (বন্ধ করুন / ESC)"
+                title="Close modal (ESC)"
               >
                 <X className="w-5 h-5 stroke-[2.5] transition-transform group-hover:rotate-90 duration-200" />
               </button>
@@ -2106,6 +2809,7 @@ export const AdminDashboard: React.FC = () => {
                     <option value="bottom_listings">Bottom of Listings (Exit Intent Banner)</option>
                     <option value="sidebar">Sidebar (Vertical Display)</option>
                     <option value="footer">Footer Banner (Pre-footer Promo)</option>
+                    <option value="product_details">Product View Details Page (Modal & Details View)</option>
                   </select>
                 </div>
 
@@ -2263,7 +2967,7 @@ export const AdminDashboard: React.FC = () => {
                   className="accent-emerald-500 w-4 h-4 cursor-pointer"
                 />
                 <label htmlFor="adActive" className="text-xs font-bold text-slate-300 cursor-pointer">
-                  Enable Advertisement on Website (ওয়েবসাইটে লাইভ রাখুন)
+                  Enable Advertisement on Website
                 </label>
               </div>
 
@@ -2273,13 +2977,13 @@ export const AdminDashboard: React.FC = () => {
                   onClick={() => setIsAdModalOpen(false)}
                   className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold hover:bg-slate-700 cursor-pointer"
                 >
-                  Cancel (বাতিল)
+                  Cancel
                 </button>
                 <button
                   type="submit"
                   className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold cursor-pointer shadow-lg shadow-amber-500/20"
                 >
-                  Save Advertisement (বিজ্ঞাপন সংরক্ষণ করুন)
+                  Save Advertisement
                 </button>
               </div>
             </form>
@@ -2305,7 +3009,7 @@ export const AdminDashboard: React.FC = () => {
                 type="button"
                 onClick={() => setIsCategoryModalOpen(false)} 
                 className="group p-2 rounded-xl bg-slate-800 hover:bg-rose-950/70 text-slate-400 hover:text-rose-300 border border-slate-700/80 hover:border-rose-700/80 transition-all cursor-pointer active:scale-90"
-                title="Close modal (বন্ধ করুন / ESC)"
+                title="Close modal (ESC)"
               >
                 <X className="w-5 h-5 stroke-[2.5] transition-transform group-hover:rotate-90 duration-200" />
               </button>
@@ -2397,10 +3101,10 @@ export const AdminDashboard: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-heading font-black text-lg text-white">
-                    Confirm Deletion (স্থায়ীভাবে মুছে ফেলার নিশ্চিতকরণ)
+                    Confirm Deletion
                   </h3>
                   <p className="text-xs text-rose-300 font-medium">
-                    Firestore ডাটাবেজ এবং ওয়েবসাইট থেকে মুছে ফেলা হবে
+                    This item will be permanently removed from Firestore and the live website.
                   </p>
                 </div>
               </div>
@@ -2408,14 +3112,14 @@ export const AdminDashboard: React.FC = () => {
                 type="button"
                 onClick={() => setItemToDelete(null)}
                 className="group p-2 rounded-xl bg-slate-800 hover:bg-rose-950/70 text-slate-400 hover:text-rose-300 border border-slate-700/80 hover:border-rose-700/80 transition-all cursor-pointer active:scale-90"
-                title="Cancel (বন্ধ করুন / ESC)"
+                title="Cancel (ESC)"
               >
                 <X className="w-5 h-5 stroke-[2.5] transition-transform group-hover:rotate-90 duration-200" />
               </button>
             </div>
 
             <div className="p-4 bg-slate-950/90 rounded-2xl border border-slate-800 text-xs text-slate-300 space-y-2">
-              <p>আপনি কি নিশ্চিত যে আপনি এটি স্থায়ীভাবে ডিলিট করতে চান?</p>
+              <p>Are you sure you want to permanently delete this item? This action cannot be undone.</p>
               <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-white font-bold break-words text-sm">
                 &ldquo;{itemToDelete.name}&rdquo;
               </div>
@@ -2434,7 +3138,7 @@ export const AdminDashboard: React.FC = () => {
                 onClick={() => setItemToDelete(null)}
                 className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-300 hover:text-white text-xs font-bold transition-all cursor-pointer active:scale-95 border border-slate-700"
               >
-                Cancel (বাতিল)
+                Cancel
               </button>
               <button
                 type="button"
@@ -2443,7 +3147,7 @@ export const AdminDashboard: React.FC = () => {
                 className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white text-xs font-bold transition-all shadow-lg shadow-rose-600/30 flex items-center gap-2 cursor-pointer disabled:opacity-50 active:scale-95"
               >
                 <Trash2 className="w-4 h-4" />
-                <span>{isDeleting ? 'Deleting...' : 'Delete Permanently (মুছে ফেলুন)'}</span>
+                <span>{isDeleting ? 'Deleting...' : 'Delete Permanently'}</span>
               </button>
             </div>
           </div>

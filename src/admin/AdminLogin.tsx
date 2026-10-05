@@ -22,16 +22,16 @@ export const AdminLogin: React.FC = () => {
 
     try {
       await signInWithGoogle();
-      addToast('TakeZon এডমিন ড্যাশবোর্ডে স্বাগতম!', 'success');
+      addToast('Welcome to TakeZon Admin Dashboard!', 'success');
     } catch (err: any) {
-      if (err.message === 'এই Google account অনুমোদিত নয়।' || err.message?.includes('অনুমোদিত নয়')) {
-        setLocalError('এই Google account অনুমোদিত নয়।');
+      if (err.message?.includes('not authorized')) {
+        setLocalError('This Google account is not authorized as an administrator.');
       } else if (err.code === 'permission-denied' || err.message?.includes('permission-denied')) {
-        setLocalError('এই Google account অনুমোদিত নয়।');
+        setLocalError('This Google account is not authorized as an administrator.');
       } else if (err.message && (/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(err.message) || /auth\//.test(err.message))) {
-        setLocalError('এই Google account অনুমোদিত নয়।');
+        setLocalError('This Google account is not authorized as an administrator.');
       } else {
-        setLocalError(err.message || 'গুগল সাইন-ইন সম্পন্ন হতে পারেনি।');
+        setLocalError(err.message || 'Google sign-in could not be completed.');
       }
     } finally {
       setIsSigningIn(false);
@@ -52,10 +52,10 @@ export const AdminLogin: React.FC = () => {
           type="button"
           onClick={() => navigateTo('home')}
           className="group flex items-center gap-2 text-xs font-bold text-slate-200 hover:text-white transition-all cursor-pointer h-10 px-4 rounded-xl bg-slate-900/90 hover:bg-slate-800 active:bg-slate-950 border border-slate-700/80 hover:border-amber-400/50 shadow-md active:scale-95"
-          title="Return to Storefront (মেইন স্টোরে ফিরে যান)"
+          title="Return to Storefront"
         >
           <ArrowLeft className="w-4 h-4 text-amber-400 transition-transform group-hover:-translate-x-1" />
-          <span>Return to Storefront (ফিরে যান)</span>
+          <span>Return to Storefront</span>
         </button>
       </div>
 
@@ -81,9 +81,9 @@ export const AdminLogin: React.FC = () => {
               <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
               <span>Firebase OAuth 2.0 Security</span>
             </div>
-            <h2 className="text-lg font-bold text-white">এডমিন অথেনটিকেশন</h2>
+            <h2 className="text-lg font-bold text-white">Administrator Authentication</h2>
             <p className="text-xs text-slate-400 leading-relaxed">
-              TakeZon অ্যাডমিন প্যানেলে নিরাপদ প্রবেশের জন্য আপনার ভেরিফাইড গুগল অ্যাকাউন্ট দিয়ে সাইন-ইন করুন।
+              Sign in with your authorized Google administrator credentials to securely manage TakeZon products, advertisements, navigation, and store settings.
             </p>
           </div>
 
@@ -106,7 +106,7 @@ export const AdminLogin: React.FC = () => {
               {isSigningIn ? (
                 <>
                   <Loader2 className="w-5 h-5 text-indigo-600 animate-spin" />
-                  <span className="text-slate-800">অথেনটিকেশন যাচাই হচ্ছে...</span>
+                  <span className="text-slate-800">Verifying administrator authentication...</span>
                 </>
               ) : (
                 <>
@@ -130,7 +130,7 @@ export const AdminLogin: React.FC = () => {
                     />
                   </svg>
                   <span className="text-slate-900 group-hover:text-black">
-                    Continue with Google (গুগল দিয়ে প্রবেশ করুন)
+                    Continue with Google
                   </span>
                 </>
               )}
@@ -140,15 +140,15 @@ export const AdminLogin: React.FC = () => {
             <div className="pt-3 border-t border-slate-800/80 space-y-2 text-[11px] text-slate-400">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <span>গুগল অ্যাকাউন্টের মাধ্যমে নিরাপদ ও অনুমোদিত সাইন ইন</span>
+                <span>Secure Google SSO OAuth 2.0 Admin Authentication</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <span>Firestore Security Rules দ্বারা এডমিন ডেটা সম্পূর্ণ এনক্রিপ্টেড ও সংরক্ষিত</span>
+                <span>Data encrypted and secured by Google Cloud Firestore rules</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                <span>শুধুমাত্র অনুমোদিত অ্যাডমিন অ্যাকাউন্ট প্রবেশ করতে পারবে</span>
+                <span>Restricted to verified TakeZon store administrators only</span>
               </div>
             </div>
           </div>
